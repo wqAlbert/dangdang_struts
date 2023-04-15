@@ -1,0 +1,113 @@
+1.项目入口：
+                                  重定向                                                                                                                 转发                                
+index.jsp------------->main/toMain.action(ActionSupport)------------>main/main.jsp
+【知识点】：ActionSupport是Struts2框架的默认Action
+
+2.main.jsp结构
+  （Ⅰ） <div class="head_container">
+                  在登录、注册模块中分析
+  （Ⅱ）<div class="book">
+              左栏：详见下面的[3.商品展示]
+              中栏：
+      <s:action name="" executeResult="true">                                     success
+      ---------------------------------------->recommend.action(Recommend.action)--------->recommend.jsp
+      <s:action name="" executeResult="true">                        success
+      ---------------------------------------->hot.action(Hot.action)--------->hot.jsp
+      <s:action name="" executeResult="true">                        success
+      ---------------------------------------->new.action(New.action)--------->new.jsp
+               
+                右栏：
+      <s:action name="" executeResult="true">                                    success
+      ---------------------------------------->hotBoard.action(NewBorard.action)--------->hotBoard.jsp
+             【知识点】：
+      (1)<s:action>可以实施页面的局部加载；
+      (2)ajax也可以实施页面的局部加载;实际中使用jQuery框架完成
+           
+  （Ⅲ）<div class="public_footer">
+
+            
+3.商品展示<div class="book">
+  (1)左栏的初始化[分类数据显示]——执行CategoryAction
+             ============
+     <div id="left" class="book_left">
+	  	<!--加载category/category.jsp中内容-->
+     </div>                                
+                                                             HTML片段 
+              $.get()                                success   (链接)      融合                               
+     main.jsp------->category.action(CategoryAction)------->category.jsp------->main.jsp(Ⅰ)
+                                                                                ======== 
+     (Ⅰ)显示二级目录及其内容：CategoryAction#execute()：
+       (a)属性：List<Category> listCats;
+       (b)调用：CategoryServiceImpl#createCategory(CategoryDao.CATEGORY_ID);
+              ①List<Category> catDao.findCatByParentId(parentId);  
+              ②HQL:select distinct cat from Category cat  join fetch cat.subCats where cat.parentId=?
+            (指定一级目录下的二级目录及其相关子目录)                                                                                                                          
+       (c)category.jsp:
+          ①[a href='bookList.action?sc=${c2.id }'>${c2.name }</a>]                                                                                
+                                其中：c2映射List<Category>中的元素(c2表示2级目录) 
+          ② <s:iterator value="#c2.subCats" var="c3">
+			   <li><a href='bookList.action?sc=${c2.id }&ssc=${c3.id}'>${c3.name }</a></li>
+			</s:iterator>                                                                        
+			其中：c3映射c2.subCats的元素；
+			    sc: sencondCategory;<->BookListAction的属性
+			    ssc:subSecondCategory;<->BookListAction的属性
+  
+  (2)左栏的链接点击及其中栏商品的分页显示：   
+                    ============
+  
+                                   链接                                                                                                 success
+     main.jsp-------->bookList.action(BookListAction)-------->bookList.jsp(Ⅱ)
+     ========               （分页处理）                                     |        ============
+                                                   |
+                                                   |(子目录下没有内容)
+                                                   | main[RedirectAction]                转发
+                                                   |--------------------->toMain.action------->main.jsp
+    
+	 (Ⅱ)点击链接的书籍分页显示(BookListAction#execute)：
+	     //Action的具体执行过程
+	     (1)BookServiceImpl#findBookByCatId(catId, page, pageSize)
+	     (2)计算总页数  
+	        
+  (3)商品（图书）的购买操作：
+   	 ①操作-点击购买按钮
+   	             <img onclick=fun>(点击了购买按钮)                                          json
+                  ($.getJSON())                                                        (success)局部更新
+     bookList.jsp--------------------------------->addItem.action(CartAction#addItem())----------------->bookList.jsp
+     ============    
+   	 
+   	
+   	②操作 -先进入商品详尽页面然后再购买
+   	                                     链接：书名                                                                                                      success    (产品详细) 
+	 bookList.jsp------------------>product.action(ProductAction)---------->product.jsp(Ⅲ)
+	 ============                                                           ===========
+	 
+	//在详尽页面中,订购时的局部更新
+	 (产品详细)     ($.getJSON())                                        (success)局部更新
+	 product.jsp ---------------->addItem.action(CartAction#addItem())----------------->product.jsp
+	 ============  （购买按钮）                           (购物车)                                                     
+                                                                                       
+     
+                                                                                                       
+4.【思路总结】：
+   (1)页面中的动态数据来源于Action；Action是页面的背后支持，因此访问页面先要访问Action;
+   (2)Action的执行（调用业务组件），实际上就是为页面准备数据；
+   (3)Action通常将准备好的数据作为Action的属性，或者存储在ActionContext中；
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+   	    

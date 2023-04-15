@@ -1,0 +1,89 @@
+（一）开发步骤：
+ 1.项目雏形：Struts2+Hibernate3.3 满足于B/S结构
+   (1)不完善的方面:
+      ①组件管理采用的是工厂模式(工厂模式也没有采用组件注册的方式);
+      ②事务管理采用struts2的拦截器实现,缺点是:事务的粒度不精确,应该针对业务组件而不是控制器;
+      ③购物车的实现采用的是Session方式,不实用;应该采用cookie+表+缓存的方式;
+      ④订单管理模块不完善;
+   (2)值得借鉴的方面:
+      ①struts2框架的分模块开发与组织;
+      ②登录和注册模块的客户端校验和服务器端校验:
+       (a)客户端使用javascript校验;服务器端采用工具类;
+       (b)ajax校验,验证码生成与校验;
+      ③结构数据的层级展示,平级数据的分页显示;
+      ④多对多关联,继承映射等;
+      ⑤密码加密,激活码生成等;
+      
+ 2.最终成品：Struts2+Spring3.0+Hibernate3.3
+       采用SSH整合针对项目雏形进行改进和完善.
+       
+（二）建库及导入样板数据：
+1.在MySQL下，键入如下语句：
+  create database dangdang;
+2.在cmd模式下，键入如下命令：
+  mysql -uroot -ppwd <d:\dangdang.sql(sql脚本的实际路径)
+  【注意】：①脚本的编码是utf-8；
+        ②MySQL服务器的编码应设置为：utf8
+                           
+（三）项目总体说明：
+1.项目总体技术架构(Struts2+Hibernate+jQuery+Ajax)
+     注意:项目雏形并没有使用spring框架,需要改进.
+   表现层：JSP,Struts2标签或EL,OGNL表达式,jQuery；
+   控制层：Struts2控制器Action、拦截器等；
+   业务层：Service组件，由Action调用；
+   数据访问/持久层：采用Hibernate框架
+   层与层之间：采用工厂方式访问
+   数据库：MySQL
+   js与服务器交互：采用Ajax
+   
+ 2.项目的总体需求
+    1）产品浏览 main
+       主界面、分类浏览界面、图书详细信息界面
+    2）用户管理 user
+       注册、登录
+    3）购物车 cart
+       购买、删除、恢复、变更数量、已购产品显示操作
+    4）订单 order
+       订单确认、填写送货地址
+ 3.数据库的设计（参考E-R模型图）
+ 	d_product:产品共有信息表
+ 	d_book:图书信息表
+ 	d_category:产品类别信息表
+ 	d_category_product:类别和产品对应关系表
+    d_user:用户信息表
+    d_receive_address:用户收货地址信息表
+    d_order:用户订单信息表
+    d_item:订单明细信息表
+    关系请参考E-R模型图
+ 4.工程结构
+    1）src源码结构
+    	com.imvcc.action：Action业务组件
+    	com.imvcc.dao：DAO数据访问组件
+    	com.imvcc.pojo：Hibernate映射实体类
+    	com.imvcc.mapping：Hibernate映射描述文件
+    	com.imvcc.util：工具类、共通类
+    	com.imvcc.interceptor：自定义Interceptor拦截器组件
+    2）jsp文件结构Web-Root
+    	WEB-INF/user：用户管理界面
+    	WEB-INF/order：订单界面
+    	WEB-INF/cart：购物车界面
+    	WEB-INF/main：产品浏览界面
+    	common:页眉页脚共通界面
+    	css：样式文件
+    	js：js脚本文件
+    	productImages：书的图片
+    	images：系统界面的图片
+    3）src配置文件结构
+      config/struts：各模块Struts2配置文件
+      config/hibernate：Hibernate框架的配置文件
+      struts.xml：Struts2主配置
+      log4j.properties：Log4j日志配置
+      
+      
+   
+ 
+ 
+ 
+ 
+   
+  

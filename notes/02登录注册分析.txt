@@ -1,0 +1,173 @@
+1.项目入口：
+                                  重定向                                                                                                                 转发
+index.jsp------------->main/toMain.action(ActionSupport)------------>main/main.jsp
+【知识点】：ActionSupport是默认Action,将请求分发到相应的jsp页面
+
+2.main.jsp
+  (1)上部-页头：<div class="head_container">
+              ============================
+  (2)中部-内容：<div class="book">
+  (3)下部-页尾：<div class="public_footer">
+
+3.<div class="head_container"> 
+  ============================
+  (1)页头的初始展示
+     <div class="head_welcome">
+      ①  动态加载
+         <span id="logininfo" class="head_toutext">
+         [ 
+         <a class="b" href="../authorize/toLogin.action">登录</a>
+                             ===========================
+         |
+         <a class="b" href="../authorize/toRegist.action">注册</a>
+                             ============================      
+         ]
+        </span>
+        
+        <b>您好 <font color="orange"><s:property value="#session['session.com.imvcc.action.user.authorize'].nickname"/></font>，欢迎光临当当网</b>
+		[&nbsp;<a href="../authorize/logout.action" class="b">登出</a>&nbsp;]
+		                ==========================
+		
+		
+      ② <div class="cart gray4012">
+           <a href="../cart/toCart.action">购物车</a>
+                    =======================
+        </div>
+                
+      ③<span class="head_welcome_text">
+			<span class="little_n">
+				|
+				<a class="head_black12a" name="mydangdang" href="#">我的当当</a>
+				|
+				<a class="head_black12a" target="_blank" name="helpcenter" href="#">帮助</a>
+				|
+			</span>
+	    </span>
+      
+  (2)登录：
+                                                                             "success"
+                                                         转发                                        提交                                                                                        redirectAction                直跳
+       toLogin.action----->loginForm.jsp----->login.action(LoginAction#login)---------------->toMain.action------>main.jsp
+              |               |                                              |"redirect"[临时登录]
+              |               |                                              |redirectAction                   success
+              |               |                                              +--------------->toRedirect.action------->redirect.jsp
+              |               |                                              |"unactived"[进入激活页面]
+              |               |                                              |redirectAction                  直跳
+              |               |                                              +--------------->toVerify.action--------->verifyForm.jsp
+              |               |                        "input"(没有通过校验)  |                ===============
+              |               <----------------------------------------------+
+              |               |                       "error"(email或密码错误  |
+              |               <----------------------------------------------+
+              |                                 redirectAction(invalid.token)|                        
+              <--------------------------------------------------------------+
+        [算法]:
+        login.action(LoginAction#login)
+        ①数据规范验证
+        ②有效用户查证(UserServiceImpl#validate()):
+          (a)List<User> users = userDao.findByProperty("email", user.getEmail());
+          (b)!user.getPassword().equals(dbUser.getPassword());
+          (c)将有效用户存入session中
+             request.getSession().setAttribute(SessionConstant.SESS_USER_AUTHORIZE,	dbUser);
+        ③检查激活状态
+          if("N".equals(user.getIsEmailVerify()))
+			return "unactived";
+        ④检查是否有跳转标志？回应购物时没有登录而现在登录的用户(UserServiceImpl#isRedirectURL())
+          (a)String url = (String) session.get(SessionConstant.SESS_REDIRECT)
+                                  说明了有的模块存储了地址
+        ⑤成功跳转
+                      
+     
+     [成功登录之后的局部更新]：     
+                $.get()                                    转发                     （html片段）                    融合到(jQuery)
+        head.jsp--------->loginInfo.action(ActionSupport)---------->authorize/loginInfo.jsp------->main.jsp
+                                                                                                                                                                                                          Ⅴ
+                                                          (#session['session.com.imvcc.action.user.authorize'])    
+     
+     [登出]：
+                                              Redirection        
+                                              (success)                                   转发
+       logout.action(AuthorizeAction#logout())------------->toMain.action(ActionSupport)------->main/main.jsp
+       [算法]
+       UserServiceImpl.logout(session);
+         if (session.containsKey(SessionConstant.SESS_USER_AUTHORIZE)) {
+                                                 --------------------
+			session.remove(SessionConstant.SESS_USER_AUTHORIZE);
+		 }
+        
+  (3)注册：
+        (Ⅰ)                                                         
+                                                        redirectAction(invalid.token)                  
+               <---------------------------------------------------------------------|
+               |                                                               input |                
+               |               <-----------------------------------------------------|
+               |               |                                                     |redirectAction            
+               |      直跳              |         提交                                                                                                            |   (success)                 转发
+       toRegist.action---->registForm.jsp---->regist.action(AuthorizeAction#regist())-------------->toVerify.action---->verifyForm.jsp
+                                                                                                   =================
+                   【说明】：
+        (i)registForm.jsp所涉及到的ajax验证:
+           ①email验证(用户名是否有人用过)
+                                 $.ajax()                                                  success
+            registFormValidate.js--------->verifyEmail.action(AuthorizeAction#verfiyEmail())------->json (发送true/false)
+                                
+           ②生成验证码：
+           	  <img class="yzm_img" align="middle" id="validateImage" src="imageCode.action" width="150" height="40"
+                onclick="this.src='imageCode.action?time-'+(new Date()).getTime();"/>
+                [配置]:
+                <action name="imageCode" class="com.imvcc.actions.ImageValidateAction">
+					<result name="success" type="stream">
+						<param name="inputName">is</param>
+						<param name="contentDisposition">inline;fileName="winter.gif"</param>              注:attachment;filename="winter.gif"
+					</result>
+				</action>
+             
+            ③验证码验证
+                	                 $.ajax()                                                            success
+            	registForValidate.js--------->verifyCode.action(ImageValidateAction#verfiyValidateCode())------->json(发送true/false)
+        
+
+        (ii)regist.action(AuthorizeAction#regist())
+                                         ========
+                          ①数据规范验证
+            validateRegist()->input 
+                          ②持久化化用户
+            (a)加密密码；
+            (b)获得最后的ip:
+               user.setLastLoginIp(request.getRemoteAddr());
+            (c)获得最后的登录时间:
+               user.setLastLoginTime(System.currentTimeMillis());
+            (d)【存储用户】持久化用户并返回用户：
+               user = userDao.addUser(user);//此时已进入session且并没有关闭session
+            (e)根据id,生成激活码；
+               ①根据id,产生uuid_id;
+               ②根据uuid_id,产生激活码(uuidCode);
+            (f)【变更用户】设置user的激活码(持久化对象变更属性，存入数据库中)；
+            (g)将用户存入session中
+               request.getSession().setAttribute(SessionConstant.SESS_USER_AUTHORIZE,user);
+                                                                 -------------------      
+       (Ⅱ)                                                              
+      
+                                                           转发                                            提交                                                                                                                                     "success"                  链接                                             直跳
+       toVerify.action---->verifyForm.jsp-------->verify.action(AuthorizeVerifyAction#verity())---------------->registOk.jsp----->toMain.action------>main.jsp
+       ===============          |                                                              |"redirect"
+               |                |                                                              |redirectAction                   "success"
+               |                |                                                              |--------------->toRedirect.action--------->redirect.jsp      
+               |                |                                                     "input"  |
+               |                <--------------------------------------------------------------|
+               |                                                redirectAction("invalid.token")|
+               <-------------------------------------------------------------------------------+                    
+      
+                【说明】
+       verify.action(AuthorizeVerifyAction#verity())
+                                           ========
+       ①数据规范验证
+            validateVerify()->input
+       ②激活用户->input
+            UserServiceImpl#activeUser(emailVerifyCode,session)
+            (a)从用户录入的激活码分离出user的id;
+            (b)从session中取出user
+            (c)验证之后，设置user的激活属性（【注意】此时的user是从session中取出，是游离状态）
+            (d)session.update(user);
+                          ③检查是否有跳转标志？回应重定向的请求
+                               考察是否有：没登录的用户进行购物？
+            UserService#isRedirectURL(session)->redirect

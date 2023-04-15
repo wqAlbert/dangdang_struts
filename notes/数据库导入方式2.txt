@@ -1,0 +1,5 @@
+1.在mysql服务器中,创建dangdang数据库如下:
+create database dangdang;
+
+2.在dos模式下:
+  mysql -uroot -p密码  < dangdang2.sql的路径

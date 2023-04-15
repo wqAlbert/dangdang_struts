@@ -1,0 +1,51 @@
+5.购物车
+
+     
+                 RedirectAction                                                          
+                      (success)                                                恢复:链接   |   
+     <-------------------------recoveryItem.action(CartAction#updateCount())<----------|
+     |            RedirectAction                                                       | 
+     |                 (success)                                              变更:链接      |
+     <--------------------------updateCount.action(CartAction#updateCount())<----------|
+     |             RedirectAction                                                      | 
+     |                  (success)                                             删除:链接     |
+     <---------------------------deleteItem.action(CartAction#deleteItem())<-----------|
+     |                                                                                 | 链接:继续选购
+     |                                                                                 |-------------->bookList.action(BookListAction)
+     |                                      success                                    | 链接：结算
+  toCart.action(CartAction#showItemList())-------------------------------->cartList.jsp--------------->toOrder.action(OrderAction#toOrder())
+                                                                                                       =====================================
+  [问题]：
+  1.结算时（即购物车操作的最后一个环节）才产生订单表(d_order)，
+  2.购物车商品应该存入数据库中;
+  3.形成订单时,应该考虑修改商家产品的库存
+  4.订单商品的状态总结：
+            缺货状态、取消状态、支付状态、确认状态、出货状态、退货状态
+            
+  5.订单管理                                                                           
+   (1)追加订单状态
+   (2)撤销订单
+                                                                                                               | redirectAction
+                                                                                                               | (main)                       直跳
+                                                                                                               |---------------->toMain.action----->main.jsp
+                                                                                                                                                                        按钮链接(取消)                                    | success
+                                                             |------------------>bookList.action(BookListAction)---------->bookList.jsp
+                                       success               | 按钮链接(下一步)
+  toOrder.action(OrderAction#toOrder())-------->orderInfo.jsp------------------->toInputAddress.action(OrderAction#toInputAddress())
+  =====================================         【订单】                                                                   ===================================================
+            【此时生成d_order和d_item记录】 
+            【并准备修改商品表数量】                                                                                                                                                    取消                                                                                
+                                                                             |-------->bookList.action(BookListAction)
+                                                      success                | 提交（下一步）                                                                                                    success           链接   
+  toInputAddress.action(OrderAction#toInputAddress())-------->addressForm.jsp----->produceOrder.action(OrderAction#produceOrder())------>orderOk.jsp---->bookList.action(BookListAction)
+  ===================================================|             |                                                       input  |      ===========     ===============
+                                                     |             <--------------------------------------------------------------+
+                                                     |                                                                            |error
+                                                     |                                                                            +------>error.jsp
+                                                     |redirectAction (标志：没有登录)
+                                                     | (user.login)                                  直跳
+                                                     |---------------->toLogin.action(ActionSupport)------->loginForm.jsp
+                                                     |redirectAction (标志：没有激活)
+                                                     | (user.active)                                  直跳
+                                                     |---------------->toVerify.action(ActionSupport)------>verifyForm.jsp
+  
